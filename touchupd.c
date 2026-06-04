@@ -17,6 +17,7 @@
  */
 
 #include <IOKit/hid/IOHIDManager.h>
+#include <IOKit/hidsystem/IOHIDLib.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -64,6 +65,15 @@ static CGPoint mapPoint(void) {
     if (gInvY)   y = 1.0 - y;
     return CGPointMake(gTarget.origin.x + x * gTarget.size.width,
                        gTarget.origin.y + y * gTarget.size.height);
+}
+
+/* Poll until Accessibility is granted so the user (and installer) get a clear
+ * "clicks enabled" signal in the log without restarting the daemon. */
+static void axPollTimer(CFRunLoopTimerRef t, void *info) {
+    if (AXIsProcessTrusted()) {
+        fprintf(stderr, "[touchupd] accessibility granted - clicks enabled\n");
+        CFRunLoopTimerInvalidate(t);
+    }
 }
 
 static void post(CGEventType type, CGPoint pt) {
@@ -126,6 +136,32 @@ int main(int argc, char **argv) {
 
     findTargetDisplay();
     if (!gHaveTarget) return 1;
+
+    /* Register with TCC so "touchupd" appears in the System Settings lists
+     * (Privacy & Security -> Input Monitoring / Accessibility) without the
+     * user having to add it by path. Prompts appear where the session allows. */
+    bool imGranted = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent);
+    fprintf(stderr, "[touchupd] input monitoring: %s\n",
+            imGranted ? "granted"
+                      : "missing - toggle 'touchupd' ON in the \"Input Monitoring\" window "
+                        "(System Settings -> Privacy & Security)");
+
+    CFStringRef axKeys[]   = { kAXTrustedCheckOptionPrompt };
+    CFTypeRef   axValues[] = { kCFBooleanTrue };
+    CFDictionaryRef axOpts = CFDictionaryCreate(NULL,
+        (const void **)axKeys, (const void **)axValues, 1,
+        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    bool axGranted = AXIsProcessTrustedWithOptions(axOpts);
+    CFRelease(axOpts);
+    if (axGranted) {
+        fprintf(stderr, "[touchupd] accessibility granted - clicks enabled\n");
+    } else {
+        fprintf(stderr, "[touchupd] accessibility: missing - toggle 'touchupd' ON in the "
+                        "\"Accessibility\" window (System Settings -> Privacy & Security)\n");
+        CFRunLoopTimerRef t = CFRunLoopTimerCreate(NULL,
+            CFAbsoluteTimeGetCurrent() + 5.0, 5.0, 0, 0, axPollTimer, NULL);
+        CFRunLoopAddTimer(CFRunLoopGetCurrent(), t, kCFRunLoopDefaultMode);
+    }
 
     IOHIDManagerRef mgr = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
     CFMutableDictionaryRef match = CFDictionaryCreateMutable(kCFAllocatorDefault, 0,

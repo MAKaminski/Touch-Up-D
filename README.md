@@ -37,21 +37,26 @@ device even when an app "seizes" it.
 4. **Restores the cursor** to its pre-touch position on finger lift — your pointer
    never visibly leaves the screen you're working on.
 
-## Install
+## Install (guided)
 
 ```bash
 sudo bash install.sh
 ```
 
-Then grant `/usr/local/bin/touchupd` in **System Settings → Privacy & Security**:
+macOS requires *you* to grant two permissions — no installer can do it for you.
+So the installer walks you through it: it opens **[SETUP.md](SETUP.md)** plus each
+System Settings window by name — first **"Input Monitoring"**, then
+**"Accessibility"** — tells you exactly what to click in each, and auto-detects
+the moment each grant lands (`✓ Input Monitoring granted — device seized`,
+`✓ Accessibility granted — clicks enabled`). The daemon also registers itself
+with TCC, so `touchupd` appears in both lists without hunting for it by path.
 
-| Permission | Why |
-|---|---|
-| Input Monitoring | exclusive (seized) access to the touch device |
-| Accessibility | posting synthetic clicks |
+| Window | Permission | Why |
+|---|---|---|
+| "Input Monitoring" | exclusive (seized) access to the touch device | stops macOS moving the cursor on touch |
+| "Accessibility" | posting synthetic clicks | makes taps actually click |
 
-Use **+** in each pane, press `Cmd+Shift+G`, type `/usr/local/bin/touchupd`.
-The daemon retries every 10 s, so it starts working the moment both are granted.
+Non-interactive install (CI, scripted): `sudo NO_GUIDE=1 bash install.sh`.
 
 ## Configure
 
