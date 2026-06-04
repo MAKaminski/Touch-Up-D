@@ -1,5 +1,25 @@
 # Touch Up D — v3.0
 
+**Turn any touchscreen monitor into a real touch control deck for your Mac.**
+
+![Touch Up D driving a Prechen 12.3" touch deck](prechen-screenshot.png)
+
+*A 12.3" Prechen strip display running as a touch deck: live system stats, one-tap
+app launchers, volume controls, and a terminal — every element finger-tappable,
+while the mouse cursor stays exactly where you left it on your main display.*
+
+## What it feels like
+
+- **Tap a button, it activates.** No cursor hunting, no dragging windows around —
+  the touchscreen behaves like an appliance, not like a second mouse pad.
+- **Your pointer never leaves your work.** The cursor blips to the touch for the
+  ~100 ms of the tap and snaps back to its exact position the moment you lift.
+- **Drags and holds just work** — your finger is the cursor only while it's on the glass.
+- **Invisible.** No dock icon, no menu bar item, no app to launch. A launchd daemon
+  that survives reboots and starts before you log in.
+
+## Why this needs to exist
+
 Tap-to-click for touchscreen monitors on macOS, done at the layer below WindowServer.
 
 macOS has no native touchscreen support: it treats USB touch digitizers as absolute
